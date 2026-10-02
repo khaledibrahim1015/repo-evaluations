@@ -9,6 +9,7 @@ _Snapshot taken 2026-10-02 from shallow clones of each repo's default branch._
 3. **Don't compete on "we host it for you."** Multica, Paperclip, and the agent vendors themselves (cloud sessions from Anthropic, OpenAI, Cursor and GitHub) will all offer that. Generic sandboxes (E2B, Daytona, Modal, Cloudflare, `kubernetes-sigs/agent-sandbox`) are already interchangeable plugins.
 4. **The opening is the part every project says it does *not* do:** keeping credentials and network access secure, and making sure the repo actually builds and tests inside the sandbox. Ship it as a runtime that runs **in the customer's own cloud account** and plugs into *any* board (Multica, Paperclip, Mesa).
 5. **It fits your background.** Your own repos `provisionStack`, `instance-type-availability-module` and `Kube-Operator` are exactly this skill set.
+6. **Rebranding today's Multica for MENA isn't allowed** without both a commercial license and a separate branding waiver. The **last plain Apache 2.0 release, v0.1.19 (2026-04-08), can legally be forked and rebranded**, but it is an early web-only version. See section 8.
 
 ---
 
@@ -182,8 +183,69 @@ This report helps you test the idea and shape it into something you can build an
 
 ---
 
+## 8. Can you clone Multica, rebrand it, and target MENA?
+
+### Today's Multica: no, not without two separate permissions
+From Part I of the Multica License:
+- **1(b) Branding.** You may not remove or change the Multica logo, name, or copyright information shown by any UI derived from Multica's UI code. This applies *even after that code is modified, moved, renamed or extracted*. A rebrand needs a written **branding waiver**.
+- **1(a) Hosting and selling.** Offering it to other organizations as SaaS, as a managed service, or inside a product you sell or distribute needs a **commercial license**. A free public instance counts too.
+- **1(d) Separate grants.** A commercial license does not include a branding waiver, and a branding waiver does not include a commercial license.
+- **Allowed without either:** internal use within one organization. A MENA company can self-host stock Multica for its own teams.
+
+### The legal route: fork the last Apache 2.0 release
+Multica's license history (from `git log -- LICENSE`):
+
+| | |
+|---|---|
+| Before 2026-04-01 | No LICENSE file. Only the release config declared `MIT`. **Don't rely on this.** |
+| **2026-04-01 → 2026-04-08** | **Plain Apache 2.0** (`c52c6e69c` added it; `f4ba27f2f` replaced it with the restricted license) |
+| Last release in that window | **`v0.1.19`**, commit `bd6731525e601695cd5dcd53036016bcff0a6956`, 2026-04-08 |
+| Evidence it was published | Tagged releases v0.1.11–v0.1.19 in the window; the Homebrew formula declared `license: "Apache-2.0"` |
+| What it contains | ~53k non-test lines (roughly 9% of today's size): Go backend + Postgres, Next.js web app, a daemon for Claude Code and Codex (plus OpenCode and OpenClaw), skills, multiple workspaces, real-time task lifecycle |
+| What it lacks (all added later) | Desktop and mobile apps, most of today's 26 agent CLIs, squads, autopilots, chat-channel integrations, and the docs site |
+
+Apache 2.0 grants are perpetual and irrevocable. Code released under it stays usable under Apache 2.0 after the project relicenses, which is how OpenTofu, OpenSearch and Valkey were forked. If you take this route:
+1. **Fork from the `v0.1.19` tag** and nothing later.
+2. **Remove the Multica name and logo everywhere.** About 159 files mention it, and Apache 2.0 grants no trademark rights. Choose your own name.
+3. **Keep the `LICENSE` and copyright notices**, and mark the files you change (Apache 2.0 §4).
+4. **Never copy or port anything from later Multica**, not even a one-line bug fix. Set a clean-room rule for everyone on the team.
+5. **Have a lawyer confirm this before raising money or signing customers.** The key fact to confirm is that the repository and releases were public during that window.
+
+**Trade-off:** you inherit an early version that is six months old, and you diverge from upstream on day one. It gives you a head start, not a finished product. Its architecture (Go + Postgres + Next.js + daemon) matches your Go background better than Paperclip does, and it is a fuller product than Mesa (MIT, ~12k lines).
+
+### What would make a MENA version worth buying
+Gaps in today's Multica, checked in its code:
+- **No Arabic UI and no right-to-left layout.** UI locales are `en`, `fr`, `ja`, `ko` and `zh-Hans`; docs are translated to `fr`, `ja`, `ko` and `zh`.
+- **No native WhatsApp or Microsoft Teams channel.** It has Slack, Lark, DingTalk, WeCom and Telegram.
+- **The producer is a Hong Kong company** (Index Labs (Hong Kong) Limited).
+
+Arabic and those two channels are features Multica could add in weeks, so **they are not a moat on their own**. The edges a local company can actually defend:
+1. **In-country hosting for regulated buyers** (banks, telcos, government). The board, its data, and the agent runtimes stay inside the country, operated by a local entity. This is where the run plane from section 4 fits.
+2. **Local procurement:** a local entity, local-currency invoices that meet local tax rules, Arabic contracts and support, and partnerships with system integrators.
+3. **The channels people already use:** WhatsApp and Teams.
+
+**Big caveat, model inference:** even with the board and runtimes in-country, Claude Code and Codex send code to the model provider. For regulated buyers, find out early what their regulators accept: in-region model hosting, approved providers, or open-weight models.
+
+### Recommended path
+| Option | What it is | Upside | Downside |
+|---|---|---|---|
+| **A. Partner** | Ask Multica for a MENA commercial license + branding waiver: https://www.multica.ai/contact-sales | You get every upstream update; it's the fastest and least risky | They may refuse or take a large share |
+| **B. Services** | Install and support stock Multica inside MENA customers' own infrastructure, for their internal use | Revenue from day one; you learn what buyers need | A services margin, not a product. Confirm in writing whether running it *for* a customer counts as a "managed service" |
+| **C. Your own product** | Fork `v0.1.19` (or Mesa), then make it Arabic-first and in-country, add WhatsApp/Teams, and add the run plane | Most upside; you own the brand | Most work; you compete with Multica directly |
+
+**Suggested order:** in weeks 0–4, interview 15 engineering leaders at MENA banks, telcos, gov-tech and scale-ups, and ask Multica about option A at the same time. Ask the leaders:
+- Do your teams use coding agents today?
+- Is in-country hosting a hard requirement, and for which data (code, issues, run logs)?
+- Does sending code to a model API pass your security review?
+- Is an Arabic UI required, or just nice to have?
+
+**Go to C if** Multica says no or the terms are bad, **and** at least 5 regulated organizations say residency is a blocker, **and** at least 3 agree to a paid pilot.
+
+---
+
 ## Appendix: sources read
-- `multica-ai/multica`: `README.md`, `VISION.md`, `CLI_AND_DAEMON.md`, `LICENSE`, `apps/docs/content/docs/security-model.mdx`, `server/internal/cloudruntime/`, `server/internal/handler/cloud_runtime.go`, landing-page i18n strings ("Cloud runtime (waitlist)").
+- `multica-ai/multica`: `README.md`, `VISION.md`, `CLI_AND_DAEMON.md`, `LICENSE`, `NOTICE`, `apps/docs/content/docs/security-model.mdx`, `server/internal/cloudruntime/`, `server/internal/handler/cloud_runtime.go`, `server/internal/integrations/`, `packages/views/locales/`, landing-page i18n strings ("Cloud runtime (waitlist)").
+- `multica-ai/multica` history: `git log -- LICENSE NOTICE` (commits `c52c6e69c`, `f4ba27f2f`, `4f8969ef5`, `0314df3b8`, `00e206097`, `10746ad3a`, `9c69661f7`), release tags around April 2026, and the `v0.1.19` tree (`LICENSE`, `README.md`, `.goreleaser.yml`, `server/internal/`).
 - `paperclipai/paperclip`: `README.md`, `ROADMAP.md`, `LICENSE`, `packages/plugins/sandbox-providers/{SANDBOX-REQUIREMENTS.md, e2b, kubernetes}`, `packages/paperclip-runner/README.md`.
 - `msoedov/mesa`: `README.md` (including its landscape comparison table), `LICENSE`, `internal/` layout.
 - `Claw-Company/clawcompany`: `README.md`, `LICENSE`, repo layout.
