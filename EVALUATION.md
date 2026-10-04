@@ -10,6 +10,7 @@ _Snapshot taken 2026-10-02 from shallow clones of each repo's default branch._
 4. **The opening is the part every project says it does *not* do:** keeping credentials and network access secure, and making sure the repo actually builds and tests inside the sandbox. Ship it as a runtime that runs **in the customer's own cloud account** and plugs into *any* board (Multica, Paperclip, Mesa).
 5. **It fits your background.** Your own repos `provisionStack`, `instance-type-availability-module` and `Kube-Operator` are exactly this skill set.
 6. **Rebranding today's Multica for MENA isn't allowed** without both a commercial license and a separate branding waiver. The **last plain Apache 2.0 release, v0.1.19 (2026-04-08), can legally be forked and rebranded**, but it is an early web-only version. See section 8.
+7. **Multica, Mesa and Paperclip are agent orchestrators, and they do stop at the pull request.** That said, GitLab, GitHub, Atlassian, Harness and Factory already sell agents across the whole SDLC. The opening is a neutral **SDLC control layer for agent-written code** (verification gates plus audit evidence), not another SDLC platform. See section 9.
 
 ---
 
@@ -243,10 +244,106 @@ Arabic and those two channels are features Multica could add in weeks, so **they
 
 ---
 
+## 9. Are these just coding-agent orchestrators, and do they miss the SDLC?
+
+### What each project really is
+| Project | What it is | Where its "done" sits |
+|---|---|---|
+| **Multica** | Coding-agent orchestrator plus a team issue board | The issue moves to Done when its linked pull request merges |
+| **Mesa** | Coding-agent orchestrator ("zero-human company") | A work block is marked `shipped` after human sign-off |
+| **Paperclip** | General agent orchestrator ("company OS"); coding is one use case | Its review and approval stages are complete |
+| **ClawCompany** | Multi-agent assistant for research and reports; not coding-focused | A report is delivered |
+| **Keel** | Not an orchestrator: an SDLC method kit that runs inside one coding agent | Its own gates pass, then `/ship` |
+
+So yes: Multica, Mesa and Paperclip decide *who works on what* and *run the agent*. Their job ends around the pull request.
+
+### SDLC coverage, checked in each codebase
+| Stage | Multica | Paperclip | Mesa | Keel |
+|---|---|---|---|---|
+| Requirements / spec | Issues and projects | Goals; planning mode with plan approvals | Strategic goals ("Apex blocks") with target metrics | ✅ Full spec documents, including every screen state |
+| Design / architecture | — | Plans only | — | ✅ Design system, architecture, data model |
+| Build | ✅ | ✅ | ✅ | ✅ (drives your agent) |
+| Review | Human review status | ✅ Review and approval stages; the agent that did the work is excluded from reviewing it | Review chain following reporting lines | Code-reviewer agent |
+| Test / quality gate | Shows CI status on the pull request card, read-only | Agents can publish review results as GitHub checks (experimental chat connector) | — | ✅ Gates that fail the build (placeholders, dependency boundaries, code ownership) |
+| Security gate | — | — | — | ✅ `trespass` proves Postgres row-level security |
+| CI/CD | Watches CI; an autopilot can trigger on a CI event | — | — | Planned in documents only |
+| Release / deploy | Example plugin only (`release-checklist`) | Preview URLs for dev servers | An "approve for deployment" status, with no deploy integration | `/ship` command |
+| Operate / incidents | Example plugin only (`deploy-sentinel`) | — | — | — |
+| Traceability (requirement → test → release) | — | Goal ancestry on tasks | Alignment score | Inside its own documents |
+
+**For the orchestrators, your instinct is right.** They cover planning (lightly), build, review and merge. At most they watch CI, and nothing after the merge is in their core product. **Keel is the mirror image.** It covers the SDLC thinking, but for one person and one agent, with no team, no runtime and no CI/CD.
+
+### The market isn't empty: the big platforms are already there
+Agents across the whole lifecycle are where the largest DevOps vendors are putting their effort:
+- **GitLab Duo Agent Platform:** generally available in GitLab 18.8 (January 2026). Agents cover planning, coding, testing, deploying and monitoring. Available on GitLab.com and Self-Managed for Premium and Ultimate.
+- **GitHub Copilot coding agent:** runs on GitHub Actions. You assign an issue; it plans, opens a pull request, runs the tests and asks for review. Agent HQ lets developers assign Codex, Claude or Copilot to issues and pull requests.
+- **Atlassian Rovo Dev:** Jira plus Bitbucket, "from planning to deployment". It reviews code against acceptance criteria, and agentic steps for Bitbucket Pipelines were announced for Q1 2026.
+- **Harness:** positions itself as the platform for the "autonomous SDLC", with agents running inside pipelines. Its *Agent DLC* (July 2026) solves a different problem: shipping AI agents as products.
+- **Factory:** a "Software Factory" covering signal triage, code, validation, release and monitoring.
+
+**A startup can't out-platform GitLab, GitHub and Atlassian.** "An AI SDLC platform" is too big and too contested.
+
+### Where the real gap is
+Each of those platforms runs the SDLC **inside its own walls, with its own agent first**. Three things nobody does in a vendor-neutral way:
+1. **Proof between "the agent says it's done" and "this can merge":**
+   - acceptance criteria mapped to tests;
+   - tests actually run in a real environment;
+   - security checks;
+   - a human approver who is not the author.
+2. **Change-management evidence for agent-written code:** who asked, which agent ran, what it executed, which credentials and network calls it used, which tests passed, who approved, and when it was deployed. Auditors expect this kind of evidence for change management, for example under SOC 2's change-management criterion (CC8.1). Security vendors are writing about it, but the products are early.
+3. **Mixed tool estates:** many companies run Jira with GitHub or GitLab, Jenkins or Azure DevOps, and several agent CLIs. A single-vendor agent only covers its own slice.
+
+### The refined idea: an SDLC control layer for agent-written code
+Instead of "an SDLC platform":
+
+```
+ Any tracker (Jira, Multica, GitHub Issues)
+        │  task + acceptance criteria
+        ▼
+ Controlled runtime (section 4) ──► agent does the work (Claude Code, Codex, …)
+        │
+        ▼
+ Gates: acceptance criteria → tests → security → human approver ≠ author
+        │                                  (reported as a required status check)
+        ▼
+ The customer's existing CI/CD (Actions, GitLab CI, Jenkins) ──► deploy
+        │
+        ▼
+ An evidence pack per change, ready for auditors and regulators
+```
+
+- **Don't build a board or a CI system.** Plug into the ones customers already use, and report results as a required status check.
+- **It's the section 4 run plane seen from the other side.** The run plane decides **where and how** agents run; the gates decide **what must be true before their work moves on**. Together they make one product.
+- **Best first buyers are regulated teams** (banks, fintech, telcos). That lines up with the MENA angle in section 8.
+
+**Risk:** GitHub and GitLab already have branch rules, required checks and audit logs, and could add evidence packs for agent changes. The edge has to come from being neutral (any tracker, git host, CI and agent), agent-specific, and ready for auditors.
+
+### Questions to validate it with compliance and engineering leaders
+- How do you prove to auditors today that an agent-written change was reviewed and tested? Who signs off?
+- Which tracker, git host, CI and deploy tools do you use? One vendor or several?
+- Has an agent-written change ever caused an incident or an audit finding?
+- Which would you pay for first: the gates, the evidence pack, or the in-country runtime?
+
+---
+
 ## Appendix: sources read
 - `multica-ai/multica`: `README.md`, `VISION.md`, `CLI_AND_DAEMON.md`, `LICENSE`, `NOTICE`, `apps/docs/content/docs/security-model.mdx`, `server/internal/cloudruntime/`, `server/internal/handler/cloud_runtime.go`, `server/internal/integrations/`, `packages/views/locales/`, landing-page i18n strings ("Cloud runtime (waitlist)").
 - `multica-ai/multica` history: `git log -- LICENSE NOTICE` (commits `c52c6e69c`, `f4ba27f2f`, `4f8969ef5`, `0314df3b8`, `00e206097`, `10746ad3a`, `9c69661f7`), release tags around April 2026, and the `v0.1.19` tree (`LICENSE`, `README.md`, `.goreleaser.yml`, `server/internal/`).
 - `paperclipai/paperclip`: `README.md`, `ROADMAP.md`, `LICENSE`, `packages/plugins/sandbox-providers/{SANDBOX-REQUIREMENTS.md, e2b, kubernetes}`, `packages/paperclip-runner/README.md`.
 - `msoedov/mesa`: `README.md` (including its landscape comparison table), `LICENSE`, `internal/` layout.
 - `Claw-Company/clawcompany`: `README.md`, `LICENSE`, repo layout.
-- `Bhargs24/keel`: `README.md` (including the FAQ), `LICENSE`.
+- `Bhargs24/keel`: `README.md` (including the FAQ), `LICENSE`, `template/.claude/commands/`.
+- SDLC checks in code: Multica `apps/docs/content/docs/github-integration.mdx`, `server/internal/handler/github.go`, `server/internal/handler/autopilot_webhook.go`, `examples/plugins/`; Paperclip `docs/guides/execution-policy.md`, `server/src/services/chat-github-checks.ts`; Mesa `internal/models/models.go`, `internal/db/migrations/022_webhook_events.sql`.
+
+**Web sources for section 9 (searched 2026-10-04):**
+- [GitLab announces general availability of GitLab Duo Agent Platform](https://ir.gitlab.com/news/news-details/2026/GitLab-Announces-the-General-Availability-of-GitLab-Duo-Agent-Platform/default.aspx)
+- [How GitLab Duo Agent Platform brings AI agents across the entire SDLC (SoftwarePlaza)](https://softwareplaza.com/it-magazine/how-gitlab-duo-agent-platform-brings-ai-agents-across-the-entire-sdlc/)
+- [About GitHub Copilot cloud agent (GitHub Docs)](https://docs.github.com/copilot/concepts/agents/coding-agent/about-coding-agent)
+- [Assigning and completing issues with coding agent in GitHub Copilot (GitHub Blog)](https://github.blog/ai-and-ml/github-copilot/assigning-and-completing-issues-with-coding-agent-in-github-copilot/)
+- [OpenAI Codex (AI agent), Agent HQ section (Wikipedia)](https://en.wikipedia.org/wiki/OpenAI_Codex_(AI_agent))
+- [Reimagining software delivery with AI-powered workflows in Jira & Bitbucket (Atlassian)](https://www.atlassian.com/blog/bitbucket/ai-powered-workflows-rovodev)
+- [Best AI-native SDLC platforms to consider in 2026 (Codewave)](https://codewave.com/feeds/blog/best-ai-native-sdlc-platform-2026)
+- [Harness launches Agent DLC (SiliconANGLE, 2026-07-21)](https://siliconangle.com/2026/07/21/harness-launches-agent-dlc-developers-deploy-ai-agents-using-familiar-processes-tools/)
+- [Factory AI review 2026 (The AI Agent Index)](https://theaiagentindex.com/agents/factory-ai)
+- [Can AI agents satisfy SOC 2 code review requirements? (Workstreet)](https://www.workstreet.com/blog/can-ai-agents-satisfy-soc-2-code-review-requirements)
+- [How AI agents impact SOC 2 Trust Services Criteria (Teleport)](https://goteleport.com/blog/ai-agents-soc-2/)
